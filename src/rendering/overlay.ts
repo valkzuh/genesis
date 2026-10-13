@@ -9,10 +9,10 @@ export type MapMode = 'political' | 'geographic' | 'population' | 'resources' | 
 
 export const MAP_MODES: { id: MapMode; label: string; key: string; description: string }[] = [
   { id: 'political', label: 'Political', key: '1', description: 'Nations, borders and wars' },
-  { id: 'geographic', label: 'Geographic', key: '2', description: 'Terrain, biomes and rivers' },
+  { id: 'geographic', label: 'Terrain', key: '2', description: 'Relief, biomes and rivers' },
   { id: 'population', label: 'Population', key: '3', description: 'Where people live' },
   { id: 'resources', label: 'Resources', key: '4', description: 'Strategic and luxury deposits' },
-  { id: 'diplomacy', label: 'Diplomacy', key: '5', description: 'Relations of the selected nation' },
+  { id: 'diplomacy', label: 'Relations', key: '5', description: 'Alliances, rivalries and wars' },
 ];
 
 /** Diplomatic categories used by the diplomacy map mode and its legend. */

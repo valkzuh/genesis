@@ -161,7 +161,7 @@ function HelpDialog() {
         <div className="grid gap-3 md:grid-cols-2">
           <HelpItem icon={<Play />} title="Time">
             <p>
-              <span className="kbd">Space</span> plays or pauses. <span className="kbd">+</span>/<span className="kbd">-</span> change speed (1–80 years per second). <span className="kbd">.</span> advances one year while paused.
+              <span className="kbd">Space</span> plays or pauses. <span className="kbd">+</span>/<span className="kbd">-</span> change speed (1–80 years per second). <span className="kbd">.</span> or <span className="kbd">→</span> advances one year while paused, <span className="kbd">Shift</span>+<span className="kbd">→</span> ten years.
             </p>
           </HelpItem>
           <HelpItem icon={<MousePointerClick />} title="The map">
@@ -169,7 +169,7 @@ function HelpDialog() {
           </HelpItem>
           <HelpItem icon={<MapIcon />} title="Map modes">
             <p>
-              <span className="kbd">1</span> Political · <span className="kbd">2</span> Geographic · <span className="kbd">3</span> Population · <span className="kbd">4</span> Resources · <span className="kbd">5</span> Diplomacy (relations of the selected nation, or alliance blocs).
+              <span className="kbd">1</span> Political · <span className="kbd">2</span> Terrain · <span className="kbd">3</span> Population · <span className="kbd">4</span> Resources · <span className="kbd">5</span> Relations (of the selected nation, or alliance blocs when none is selected).
             </p>
           </HelpItem>
           <HelpItem icon={<Keyboard />} title="Panels">
@@ -188,6 +188,7 @@ function HelpDialog() {
           <button
             type="button"
             className="btn btn-gold px-6 py-2.5 text-[0.85rem]"
+            autoFocus
             onClick={() => {
               close();
               if (!running) controller.play();
