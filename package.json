@@ -2,7 +2,7 @@
   "name": "genesis",
   "private": true,
   "version": "1.0.0",
-  "description": "GENESIS — a living, procedurally generated civilization simulator for the browser.",
+  "description": "GENESIS \u2014 a living, procedurally generated civilization simulator for the browser.",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -14,7 +14,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "simulate": "tsx scripts/simulate.ts"
   },
   "dependencies": {
     "@fontsource/cinzel": "^5.3.0",
