@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Cinzel", Georgia, "Times New Roman", serif;
+
+  --color-ink-950: #090b0f;
+  --color-ink-925: #0c0f14;
+  --color-ink-900: #10141b;
+  --color-ink-850: #141922;
+  --color-ink-800: #19202a;
+  --color-ink-750: #1e2632;
+  --color-ink-700: #252e3c;
+  --color-ink-600: #313b4c;
+  --color-ink-500: #465169;
+  --color-ink-400: #67728a;
+  --color-ink-300: #929bb0;
+  --color-ink-200: #bcc3d1;
+  --color-ink-100: #e3e6ed;
+  --color-parchment: #ece4cf;
+
+  --color-gold-100: #fbf1d0;
+  --color-gold-200: #f6e6b0;
+  --color-gold-300: #f0d78c;
+  --color-gold-400: #e2c06a;
+  --color-gold-500: #c9a24a;
+  --color-gold-600: #9e7c33;
+  --color-gold-700: #6f5622;
+
+  --color-war: #e0533b;
+  --color-peace: #6fbf8e;
+  --color-plague: #9fd16a;
+  --color-arcane: #b88ae0;
+  --color-sea: #4b84a3;
+
+  --animate-fade-in: fade-in 0.25s ease-out both;
+  --animate-slide-up: slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-slide-left: slide-left 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-glow: glow 2.4s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-left {
+    from { opacity: 0; transform: translateX(14px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(226, 192, 106, 0.0); }
+    50% { box-shadow: 0 0 18px 0 rgba(226, 192, 106, 0.25); }
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+  body {
+    background: var(--color-ink-950);
+    color: var(--color-ink-100);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    background: rgba(226, 192, 106, 0.35);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-600) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-ink-600);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  input[type="range"] {
+    accent-color: var(--color-gold-400);
+  }
+}
+
+@layer components {
+  .panel-surface {
+    background: linear-gradient(180deg, rgba(25, 32, 42, 0.97), rgba(16, 20, 27, 0.98));
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  .glass {
+    background: rgba(13, 17, 23, 0.78);
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  .section-title {
+    font-family: var(--font-display);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--color-gold-300);
+  }
+  .eyebrow {
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-ink-300);
+    font-weight: 600;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-ink-100);
+    background: var(--color-ink-750);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--color-ink-700);
+    border-color: rgba(226, 192, 106, 0.35);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+  }
+  .btn-gold {
+    background: linear-gradient(180deg, #e8c972, #c39b45);
+    color: #1a1406;
+    border-color: rgba(255, 236, 170, 0.5);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset, 0 6px 16px -8px rgba(226, 192, 106, 0.6);
+  }
+  .btn-gold:hover:not(:disabled) {
+    background: linear-gradient(180deg, #f2d686, #cfa64e);
+    color: #120d03;
+  }
+  .btn-danger {
+    background: rgba(224, 83, 59, 0.14);
+    color: #f3a796;
+    border-color: rgba(224, 83, 59, 0.35);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: rgba(224, 83, 59, 0.24);
+    border-color: rgba(224, 83, 59, 0.6);
+  }
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+  }
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    color: var(--color-ink-200);
+    transition: background 0.15s, color 0.15s;
+  }
+  .icon-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--color-gold-200);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    padding: 0.12rem 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    color: var(--color-ink-200);
+    white-space: nowrap;
+  }
+  .card {
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .field {
+    width: 100%;
+    border-radius: 0.5rem;
+    background: var(--color-ink-900);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    padding: 0.45rem 0.65rem;
+    font-size: 0.82rem;
+    color: var(--color-ink-100);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field:focus {
+    border-color: rgba(226, 192, 106, 0.6);
+    box-shadow: 0 0 0 3px rgba(226, 192, 106, 0.12);
+  }
+  .kbd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.65rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: 0.3rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom-width: 2px;
+    color: var(--color-ink-200);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(226, 192, 106, 0.25), transparent);
+  }
+}
