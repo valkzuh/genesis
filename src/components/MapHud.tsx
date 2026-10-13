@@ -120,7 +120,7 @@ function ToastItem({ toast }: { toast: Toast }) {
   const meta = eventMeta(toast.kind);
   return (
     <div
-      className="glass pointer-events-auto flex w-80 animate-slide-left items-start gap-2.5 rounded-xl px-3 py-2.5 shadow-2xl shadow-black/40"
+      className="glass pointer-events-auto flex w-[min(20rem,calc(100vw-5rem))] animate-slide-left items-start gap-2.5 rounded-xl px-3 py-2.5 shadow-2xl shadow-black/40"
       style={{ borderLeft: `3px solid ${meta.color}` }}
     >
       <div className="mt-0.5">
@@ -174,7 +174,7 @@ export function MapHud() {
           <ToastItem key={t.id} toast={t} />
         ))}
       </div>
-      <div className={cx('absolute left-3 transition-all', bottom)}>
+      <div className={cx('absolute left-3 hidden transition-all sm:block', bottom)}>
         <Legend />
       </div>
       <div className={cx('absolute right-3 flex flex-col gap-1 transition-all', bottom)}>

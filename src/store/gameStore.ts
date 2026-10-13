@@ -74,7 +74,7 @@ export const useGame = create<GameState>((set, get) => ({
   mapMode: 'political',
   selectedCiv: null,
   selectedTile: null,
-  panel: 'overview',
+  panel: typeof window !== 'undefined' && window.innerWidth < 900 ? null : 'overview',
   inspectorOpen: false,
   inspectorTab: 'overview',
   timelineOpen: false,

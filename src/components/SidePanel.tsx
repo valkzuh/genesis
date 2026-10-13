@@ -22,7 +22,7 @@ export function SidePanel() {
   if (!panel) return null;
   const meta = TITLES[panel];
   return (
-    <aside className="panel-surface absolute inset-y-0 left-[4.4rem] z-20 flex w-[min(23rem,calc(100vw-4.4rem))] shrink-0 animate-fade-in flex-col border-r shadow-2xl shadow-black/50 lg:relative lg:left-0 lg:shadow-none">
+    <aside className="panel-surface absolute inset-y-0 left-[3.3rem] z-20 flex w-[calc(100vw-3.3rem)] shrink-0 animate-fade-in flex-col border-r shadow-2xl shadow-black/50 sm:left-[4.4rem] sm:w-[min(23rem,calc(100vw-4.4rem))] lg:relative lg:left-0 lg:shadow-none">
       <div className="flex items-start justify-between gap-2 border-b border-white/[0.06] px-4 pb-3 pt-3.5">
         <div>
           <h2 className="font-display text-[1.02rem] font-bold tracking-[0.12em] text-parchment">{meta.title.toUpperCase()}</h2>

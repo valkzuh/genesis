@@ -1,4 +1,4 @@
-import type { Civ, GovernmentId, World } from '../types/simulation';
+import type { Civ, GovernmentId, War, World } from '../types/simulation';
 import { neighbors4 } from '../world/generate';
 import { clamp, clamp01 } from '../utils/math';
 import { eraInfo, GOVERNMENTS, LEADER_TRAITS, SIM } from './constants';
@@ -8,7 +8,7 @@ import { logEvent } from './events';
 import { citiesOf, destroyCiv, spawnBreakaway } from './lifecycle';
 import { components, setOwner } from './territory';
 import { declareWar } from './war';
-import { capitalTile, enemiesOf, tileDistance } from './world';
+import { capitalTile, enemiesOf, ensureRelation, tileDistance, warsOf } from './world';
 
 const NB: number[] = [];
 
@@ -38,7 +38,7 @@ export function updatePolitics(world: World): void {
     if (!civ.alive) continue;
     if (handleCollapse(world, civ)) continue;
     if (handleCrisis(world, civ, foreign[civ.id] ?? 0)) continue;
-    considerReform(world, civ);
+    considerReform(world, civ, foreign[civ.id] ?? 0);
   }
 }
 
@@ -265,26 +265,28 @@ function revolution(world: World, civ: Civ): void {
   logEvent(world, 'revolution', [civ.id], text, 4, capitalTile(world, civ));
 }
 
-function considerReform(world: World, civ: Civ): void {
+function considerReform(world: World, civ: Civ, foreignShare: number): void {
   const rng = world.rng;
   if (world.year - civ.lastUpheaval < 30 || civ.stability < 55) return;
   const lt = civ.leader.trait;
   if (!rng.chance(lt === 'reformer' ? 0.05 : 0.02)) return;
   const t = civ.traits;
   const era = civ.era;
+  // Federations unite many peoples or vast lands; others reform differently.
+  const federal = era >= 5 && (foreignShare > 0.18 || civ.tiles >= 450) && civ.tiles >= 200;
   let target: GovernmentId | null = null;
   switch (civ.government) {
     case 'tribal':
       if (era >= 1 || civ.tiles >= 40) target = t.tradition > 0.75 && rng.chance(0.3) ? 'theocracy' : 'kingdom';
       break;
     case 'kingdom':
-      if (era >= 5 && civ.tiles >= 150) target = 'federation';
+      if (federal) target = 'federation';
       else if (era >= 1 && civ.tiles >= 120 && (t.aggression > 0.5 || civ.counters.tilesConquered > 40)) target = 'empire';
       else if (era >= 3 && (t.commerce + t.science) / 2 > 0.55 && t.tradition < 0.6) target = 'republic';
       else if (era >= 2 && t.commerce > 0.75) target = 'merchant';
       break;
     case 'empire':
-      if (era >= 5 && civ.tiles >= 150) target = 'federation';
+      if (federal) target = 'federation';
       else if (era >= 4 && t.science > 0.5 && t.tradition < 0.6) target = 'republic';
       break;
     case 'theocracy':
@@ -292,7 +294,7 @@ function considerReform(world: World, civ: Civ): void {
       else if (era >= 2 && t.tradition < 0.6) target = 'kingdom';
       break;
     case 'republic':
-      if (era >= 5 && civ.tiles >= 150) target = 'federation';
+      if (federal && rng.chance(0.5)) target = 'federation';
       break;
     case 'merchant':
       if (era >= 4) target = 'republic';
@@ -371,12 +373,21 @@ function findSecessionRegion(world: World, civ: Civ): number[] | null {
     if (list) list.push(t);
     else byCulture.set(key, [t]);
   }
+  // The most populous restless region rises; empty wastes rarely rebel.
   let best: number[] | null = null;
+  let bestPop = 0;
   for (const key of Array.from(byCulture.keys()).sort((a, b) => a - b)) {
     for (const comp of components(world, byCulture.get(key)!)) {
-      if (comp.length >= 5 && (!best || comp.length > best.length)) best = comp;
+      if (comp.length < 5) continue;
+      let pop = 0;
+      for (const t of comp) pop += world.pop[t]!;
+      if (pop > bestPop) {
+        bestPop = pop;
+        best = comp;
+      }
     }
   }
+  if (best && bestPop < civ.population * 0.03) return null;
   if (!best) return null;
   // Never let a secession take most of the country.
   if (best.length > civ.tiles * 0.6) best = best.slice(0, Math.floor(civ.tiles * 0.6));
@@ -384,7 +395,9 @@ function findSecessionRegion(world: World, civ: Civ): number[] | null {
 }
 
 function secede(world: World, parent: Civ, region: number[]): boolean {
-  const rebel = spawnBreakaway(world, parent, region, { kind: 'secession', armyShare: 0.55 });
+  // Garrisons in a collapsing realm defect in greater numbers.
+  const defection = Math.min(1.2, 0.8 * (1 + Math.max(0, 45 - parent.stability) / 45));
+  const rebel = spawnBreakaway(world, parent, region, { kind: 'secession', armyShare: defection });
   if (!rebel) return false;
   const restored = rebel.origin.type === 'restoration';
   const regionName = world.cities[rebel.capital]?.name ?? rebel.baseName;
@@ -396,7 +409,8 @@ function secede(world: World, parent: Civ, region: number[]): boolean {
   parent.legitimacy = Math.max(0, parent.legitimacy - 10);
   const willFight = parent.armyPower > rebel.armyPower * 0.8 && parent.warExhaustion < 50 && parent.traits.isolation < 0.85;
   if (willFight) {
-    declareWar(world, rebel, parent, 'independence');
+    const war = declareWar(world, rebel, parent, 'independence');
+    if (war) foreignIntervention(world, war, rebel, parent);
   } else {
     logEvent(world, 'secession', [rebel.id, parent.id], `Too weak to resist, the ${parent.name} lets the ${rebel.name} go in peace.`, 2);
   }
@@ -443,9 +457,33 @@ function startCivilWar(world: World, civ: Civ): boolean {
   if (!rebel) return false;
   const seatName = world.cities[world.cityAt[seat]!]?.name ?? rebel.baseName;
   logEvent(world, 'civil_war', [civ.id, rebel.id], `Civil war erupts in the ${oldName}! Rebels at ${seatName} proclaim the ${rebel.name}.`, 4, seat);
-  declareWar(world, rebel, civ, 'civil_war', { quiet: true, callAllies: false });
+  const war = declareWar(world, rebel, civ, 'civil_war', { quiet: true, callAllies: false });
+  if (war) foreignIntervention(world, war, rebel, civ);
   civ.stability = Math.min(100, civ.stability + 6);
   return true;
+}
+
+/** Rivals of a troubled realm seize the moment to back its rebels. */
+function foreignIntervention(world: World, war: War, rebel: Civ, parent: Civ): void {
+  const rng = world.rng;
+  let joined = 0;
+  for (const rel of world.relations) {
+    if (joined >= 2) break;
+    if (rel.a !== parent.id && rel.b !== parent.id) continue;
+    const other = world.civs[rel.a === parent.id ? rel.b : rel.a]!;
+    if (!other.alive || other.id === rebel.id || rel.alliance) continue;
+    if (!(rel.rivalry || rel.opinion < -35)) continue;
+    if (other.warExhaustion > 40 || warsOf(world, other.id).length > 0) continue;
+    if (!rng.chance(0.35 + (rel.rivalry ? 0.15 : 0))) continue;
+    war.participants.push({ civ: other.id, side: 'attacker', joined: world.year, left: null, losses: 0, tilesGained: 0, tilesLost: 0, citiesTaken: 0 });
+    rel.opinion = Math.min(rel.opinion, -50);
+    rel.trade = false;
+    const r2 = ensureRelation(world, other.id, rebel.id);
+    r2.contact = true;
+    r2.opinion = Math.max(r2.opinion, 40);
+    joined++;
+    logEvent(world, 'war', [other.id, rebel.id, parent.id], `The ${other.name} intervenes on the side of the ${rebel.name} against the ${parent.name}.`, 3, capitalTile(world, rebel), war.id);
+  }
 }
 
 /** Long, deep crises end in collapse into successor states. */

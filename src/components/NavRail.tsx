@@ -37,13 +37,13 @@ function RailButton({ active, label, icon, onClick, hint, accent }: { active: bo
         onClick={onClick}
         aria-pressed={active}
         className={cx(
-          'group relative flex w-[3.9rem] flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.06em] transition',
+          'group relative flex w-[2.8rem] flex-col items-center gap-1 rounded-lg px-1 py-2 text-[0.58rem] font-semibold uppercase tracking-[0.06em] transition sm:w-[3.9rem] sm:py-1.5',
           active ? 'bg-gold-400/12 text-gold-200' : 'text-ink-300 hover:bg-white/[0.05] hover:text-ink-100',
         )}
       >
         {active && <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-x-[5px] -translate-y-1/2 rounded-r bg-gold-400" />}
         <span className={cx('[&>svg]:h-[1.15rem] [&>svg]:w-[1.15rem]', accent && !active && 'text-gold-400/80')}>{icon}</span>
-        <span className="leading-none">{label}</span>
+        <span className="hidden leading-none sm:block">{label}</span>
       </button>
     </Hint>
   );
@@ -54,8 +54,8 @@ export function NavRail() {
   const panel = useGame((s) => s.panel);
   const togglePanel = useGame((s) => s.togglePanel);
   return (
-    <nav className="z-20 flex w-[4.4rem] shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-white/[0.06] bg-ink-900 py-2" aria-label="Main">
-      <div className="eyebrow mb-0.5 text-[0.52rem] text-ink-400">Map</div>
+    <nav className="z-20 flex w-[3.3rem] shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-white/[0.06] bg-ink-900 py-2 sm:w-[4.4rem]" aria-label="Main">
+      <div className="eyebrow mb-0.5 hidden text-[0.52rem] text-ink-400 sm:block">Map</div>
       {MAP_MODES.map((m) => (
         <RailButton
           key={m.id}
@@ -71,7 +71,7 @@ export function NavRail() {
         />
       ))}
       <div className="my-1.5 h-px w-10 bg-white/[0.08]" />
-      <div className="eyebrow mb-0.5 text-[0.52rem] text-ink-400">Panels</div>
+      <div className="eyebrow mb-0.5 hidden text-[0.52rem] text-ink-400 sm:block">Panels</div>
       {PANELS.map((p) => (
         <RailButton
           key={p.id}

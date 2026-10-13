@@ -88,6 +88,13 @@ class Controller {
     });
   }
 
+  /** Restarts the current world from year 1 with the same seed and settings. */
+  reset(): Promise<void> {
+    const world = this.world;
+    if (!world) return Promise.resolve();
+    return this.generate(world.seed, { ...world.settings });
+  }
+
   install(world: World, settings?: Partial<WorldSettings>): void {
     this.pause();
     this.lastSeenEvent = world.eventSeq - 1;

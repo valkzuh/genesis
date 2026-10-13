@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ChevronsLeft, ChevronsRight, CircleQuestionMark, Globe, Pause, Play, Save, StepForward, Swords, Users, Landmark, Dices } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, CircleQuestionMark, Globe, Pause, Play, RotateCcw, Save, StepForward, Swords, Users, Landmark, Dices } from 'lucide-react';
 import { useGame, SPEEDS } from '../store/gameStore';
 import { controller } from '../store/controller';
 import { worldStats } from '../simulation/queries';
@@ -9,13 +9,13 @@ import { Hint, cx } from './ui';
 
 function Logo() {
   return (
-    <div className="flex items-center gap-2.5 pr-2">
-      <div className="relative grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-sea to-[#13283a] ring-1 ring-gold-400/70 shadow-[0_0_18px_-4px_rgba(226,192,106,0.55)]">
+    <div className="flex shrink-0 items-center gap-2.5 pr-1">
+      <div className="relative grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-sea to-[#13283a] shadow-[0_0_18px_-4px_rgba(226,192,106,0.55)] ring-1 ring-gold-400/70">
         <Globe className="h-4.5 w-4.5 text-gold-200" strokeWidth={1.6} />
       </div>
-      <div className="leading-none">
+      <div className="hidden leading-none sm:block">
         <div className="font-display text-[1.15rem] font-bold tracking-[0.28em] text-gold-300">GENESIS</div>
-        <div className="mt-0.5 text-[0.56rem] font-semibold uppercase tracking-[0.3em] text-ink-400">Living World Simulator</div>
+        <div className="mt-0.5 hidden whitespace-nowrap text-[0.56rem] font-semibold uppercase tracking-[0.3em] text-ink-400 2xl:block">Living World Simulator</div>
       </div>
     </div>
   );
@@ -24,11 +24,11 @@ function Logo() {
 function StatChip({ icon, label, value, accent, hint }: { icon: React.ReactNode; label: string; value: string; accent?: string; hint: string }) {
   return (
     <Hint text={hint} side="bottom">
-      <div className="flex items-center gap-2 rounded-lg px-2.5 py-1 hover:bg-white/[0.04]">
+      <div className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-white/[0.04]">
         <span className="text-ink-300 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
         <div className="leading-tight">
-          <div className="text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-ink-400">{label}</div>
-          <div className="num text-[0.85rem] font-semibold" style={accent ? { color: accent } : undefined}>
+          <div className="hidden text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-ink-400 2xl:block">{label}</div>
+          <div className="num whitespace-nowrap text-[0.85rem] font-semibold" style={accent ? { color: accent } : undefined}>
             {value}
           </div>
         </div>
@@ -46,33 +46,33 @@ export function TopBar() {
   const stats = useMemo(() => (world ? worldStats(world) : null), [world, version]);
 
   return (
-    <header className="relative z-30 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.06] bg-gradient-to-b from-ink-850 to-ink-900 px-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.8)]">
+    <header className="relative z-30 flex h-14 shrink-0 items-center gap-2 border-b border-white/[0.06] bg-gradient-to-b from-ink-850 to-ink-900 px-2 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.8)] sm:gap-3 sm:px-3">
       <Logo />
-      <div className="hidden h-8 w-px bg-white/[0.07] md:block" />
       {world && (
-        <div className="hidden min-w-0 flex-col leading-tight md:flex">
-          <div className="truncate font-display text-[0.92rem] font-semibold tracking-wide text-parchment">World of {world.name}</div>
-          <button
-            type="button"
-            className="flex items-center gap-1 text-left text-[0.66rem] text-ink-400 hover:text-gold-200"
-            title="Copy seed to clipboard"
-            onClick={() => {
-              void navigator.clipboard?.writeText(world.seed).catch(() => undefined);
-              useGame.getState().pushToast({ text: `Seed “${world.seed}” copied`, kind: 'info', tile: -1, civs: [], importance: 1, year: world.year });
-            }}
-          >
-            <Dices className="h-3 w-3" /> seed <span className="font-mono text-ink-300">{world.seed}</span>
-          </button>
-        </div>
+        <>
+          <div className="hidden h-8 w-px bg-white/[0.07] xl:block" />
+          <div className="hidden min-w-0 max-w-[15rem] flex-col leading-tight xl:flex">
+            <div className="truncate whitespace-nowrap font-display text-[0.92rem] font-semibold tracking-wide text-parchment">World of {world.name}</div>
+            <button
+              type="button"
+              className="flex min-w-0 items-center gap-1 text-left text-[0.66rem] text-ink-400 hover:text-gold-200"
+              title="Copy seed to clipboard"
+              onClick={() => {
+                void navigator.clipboard?.writeText(world.seed).catch(() => undefined);
+                useGame.getState().pushToast({ text: `Seed “${world.seed}” copied`, kind: 'info', tile: -1, civs: [], importance: 1, year: 0 });
+              }}
+            >
+              <Dices className="h-3 w-3 shrink-0" /> <span className="shrink-0">seed</span> <span className="truncate font-mono text-ink-300">{world.seed}</span>
+            </button>
+          </div>
+        </>
       )}
 
-      <div className="mx-auto flex items-center gap-4">
+      <div className="mx-auto flex min-w-0 items-center gap-3">
         {world && stats && (
-          <div className="flex items-center gap-3">
-            <div className="text-center leading-none">
-              <div className="text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-ink-400">{ERAS[stats.maxEra]!.name} Age</div>
-              <div className="num mt-1 font-display text-[1.35rem] font-bold tracking-wide text-gold-200">Year {world.year.toLocaleString('en-US')}</div>
-            </div>
+          <div className="shrink-0 text-center leading-none">
+            <div className="hidden whitespace-nowrap text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-ink-400 md:block">{ERAS[stats.maxEra]!.name} Age</div>
+            <div className="num whitespace-nowrap font-display text-[1.05rem] font-bold tracking-wide text-gold-200 sm:mt-1 sm:text-[1.3rem]">Year {world.year.toLocaleString('en-US')}</div>
           </div>
         )}
         {stats && (
@@ -84,7 +84,27 @@ export function TopBar() {
         )}
       </div>
 
-      <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-ink-950/60 p-1">
+      <div className="flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.07] bg-ink-950/60 p-1 sm:gap-1">
+        <Hint text="Reset this world to year 1 (same seed)" side="bottom" className="hidden sm:inline-flex">
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Reset world"
+            disabled={!world || world.year <= 1}
+            onClick={() =>
+              world &&
+              useGame.getState().askConfirm({
+                title: 'Reset this world?',
+                message: `The World of ${world.name} will return to year 1 with the same seed. ${world.year - 1} years of history and your interventions will be lost unless saved.`,
+                confirmLabel: 'Reset world',
+                danger: true,
+                onConfirm: () => void controller.reset(),
+              })
+            }
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        </Hint>
         <Hint text={<span>Slower <span className="kbd">-</span></span>} side="bottom">
           <button type="button" className="icon-btn" aria-label="Slower" onClick={() => controller.slower()} disabled={speed === 0}>
             <ChevronsLeft className="h-4 w-4" />
@@ -104,7 +124,7 @@ export function TopBar() {
             {running ? <Pause className="h-4.5 w-4.5" /> : <Play className="h-4.5 w-4.5 translate-x-[1px]" fill="currentColor" />}
           </button>
         </Hint>
-        <Hint text={<span>Advance one year <span className="kbd">.</span></span>} side="bottom">
+        <Hint text={<span>Advance one year <span className="kbd">.</span></span>} side="bottom" className="hidden sm:inline-flex">
           <button type="button" className="icon-btn" aria-label="Advance one year" onClick={() => controller.step(1)} disabled={running || !world}>
             <StepForward className="h-4 w-4" />
           </button>
@@ -114,26 +134,26 @@ export function TopBar() {
             <ChevronsRight className="h-4 w-4" />
           </button>
         </Hint>
-        <div className="num w-[4.6rem] pr-1 text-center text-[0.7rem] font-semibold leading-tight text-ink-200">
+        <div className="num w-[2.6rem] pr-1 text-center text-[0.7rem] font-semibold leading-tight text-ink-200 sm:w-[4.4rem]">
           <div className="text-gold-200">×{SPEEDS[speed]}</div>
-          <div className="text-[0.56rem] uppercase tracking-wider text-ink-400">yrs / sec</div>
+          <div className="hidden text-[0.56rem] uppercase tracking-wider text-ink-400 sm:block">yrs / sec</div>
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
-        <Hint text="Save, load, import and export worlds" side="bottom">
-          <button type="button" className={cx('btn', unsaved && 'border-gold-500/40')} onClick={() => useGame.getState().togglePanel('worlds')}>
+      <div className="flex shrink-0 items-center gap-1">
+        <Hint text="Save, load, import and export worlds" side="bottom" className="hidden sm:inline-flex">
+          <button type="button" className={cx('btn px-2.5', unsaved && 'border-gold-500/40')} aria-label="Worlds" onClick={() => useGame.getState().togglePanel('worlds')}>
             <Save className="h-4 w-4" />
-            <span className="hidden xl:inline">Worlds</span>
+            <span className="hidden 2xl:inline">Worlds</span>
           </button>
         </Hint>
         <Hint text="Generate a new world" side="bottom">
-          <button type="button" className="btn btn-gold" onClick={() => useGame.setState({ dialog: 'new-world' })}>
+          <button type="button" className="btn btn-gold whitespace-nowrap px-2.5" aria-label="New World" onClick={() => useGame.setState({ dialog: 'new-world' })}>
             <Globe className="h-4 w-4" />
-            <span className="hidden sm:inline">New World</span>
+            <span className="hidden xl:inline">New World</span>
           </button>
         </Hint>
-        <Hint text={<span>How to play <span className="kbd">?</span></span>} side="bottom">
+        <Hint text={<span>How to play <span className="kbd">?</span></span>} side="bottom" className="hidden md:inline-flex">
           <button type="button" className="icon-btn" aria-label="Help" onClick={() => useGame.setState({ dialog: 'help' })}>
             <CircleQuestionMark className="h-4.5 w-4.5" />
           </button>

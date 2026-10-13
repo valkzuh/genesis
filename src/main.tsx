@@ -9,6 +9,15 @@ import '@fontsource/cinzel/700.css';
 import './index.css';
 import { App } from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { useGame } from './store/gameStore';
+import { controller } from './store/controller';
+import { stepYear } from './simulation/engine';
+import { checkInvariants } from './simulation/invariants';
+
+// Opt-in handle for automated testing and curious players: add ?debug to the URL.
+if (import.meta.env.DEV || new URLSearchParams(window.location.search).has('debug')) {
+  (window as unknown as Record<string, unknown>).genesis = { useGame, controller, stepYear, checkInvariants };
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

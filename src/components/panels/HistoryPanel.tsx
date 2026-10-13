@@ -4,6 +4,7 @@ import { useGame } from '../../store/gameStore';
 import { controller } from '../../store/controller';
 import type { EventType, HistoryEvent } from '../../types/simulation';
 import { CivSwatch, Empty, EventIcon, cx } from '../ui';
+import { useThrottledVersion } from '../hooks';
 
 export const EVENT_CATEGORIES: { id: string; label: string; types: EventType[]; color: string }[] = [
   { id: 'war', label: 'War', types: ['war', 'battle', 'peace', 'conquest', 'civil_war'], color: '#e0533b' },
@@ -54,7 +55,7 @@ export function EventRow({ e, showCivs = true }: { e: HistoryEvent; showCivs?: b
 
 export function HistoryPanel() {
   const world = useGame((s) => s.world)!;
-  const version = useGame((s) => s.version);
+  const version = useThrottledVersion(900);
   const selected = useGame((s) => s.selectedCiv);
   const [query, setQuery] = useState('');
   const [cats, setCats] = useState<Set<string>>(() => new Set(EVENT_CATEGORIES.map((c) => c.id)));

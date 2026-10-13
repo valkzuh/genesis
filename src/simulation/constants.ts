@@ -219,7 +219,7 @@ export const GOVERNMENTS: Record<GovernmentId, GovernmentInfo> = {
   federation: {
     id: 'federation',
     name: 'Federation',
-    formats: ['Federation of {base}', 'United {base}', '{adj} Union'],
+    formats: ['Federation of {base}', 'United {base}', '{adj} Union', 'Commonwealth of {base}', '{adj} Confederation'],
     titles: ['Chancellor', 'Chancellor'],
     baseStability: 66,
     admin: 1.65,
@@ -394,5 +394,5 @@ export const SIM = {
   maxCivSamples: 260,
   sampleInterval: 5,
   maxWarYears: 45,
-  truceYears: 20,
+  truceYears: 25,
 } as const;

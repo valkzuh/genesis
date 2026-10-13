@@ -34,6 +34,7 @@ import { effectMagnitude } from '../simulation/economy';
 import { formatNumber, formatPopulation, signed } from '../utils/format';
 import { colorWithAlpha, toHex } from '../utils/color';
 import { TrendChart } from './charts';
+import { useThrottledVersion } from './hooks';
 import { CivLink, Empty, GovIcon, Hint, Pill, Section, Stat, StatBar, cx } from './ui';
 import { EventRow } from './panels/HistoryPanel';
 
@@ -141,7 +142,8 @@ function CivHeader({ world, civ }: { world: World; civ: Civ }) {
 
 function OverviewTab({ world, civ }: { world: World; civ: Civ }) {
   const version = useGame((s) => s.version);
-  const history = useMemo(() => civ.history.map((h) => ({ y: h.y, pop: h.pop, tiles: h.tiles, tech: h.tech, stab: h.stab })), [civ, version]);
+  const slow = useThrottledVersion(1000);
+  const history = useMemo(() => civ.history.map((h) => ({ y: h.y, pop: h.pop, tiles: h.tiles, tech: h.tech, stab: h.stab })), [civ, slow]);
   const cities = useMemo(() => citiesOfCiv(world, civ.id).slice(0, 6), [world, civ, version]);
   const deeds = useMemo(() => accomplishments(world, civ).slice(-10).reverse(), [world, civ, version]);
   const capital = world.cities[civ.capital];
@@ -248,8 +250,9 @@ function ResourceRow({ icon, label, value, need, detail }: { icon: React.ReactNo
 }
 
 function EconomyTab({ civ }: { civ: Civ }) {
-  const version = useGame((s) => s.version);
-  const history = useMemo(() => civ.history.map((h) => ({ y: h.y, wealth: h.wealth, output: h.output, army: h.army })), [civ, version]);
+  useGame((s) => s.version);
+  const slow = useThrottledVersion(1000);
+  const history = useMemo(() => civ.history.map((h) => ({ y: h.y, wealth: h.wealth, output: h.output, army: h.army })), [civ, slow]);
   const b = civ.budget;
   const savings = Math.max(0, 1 - b.military - b.research - b.development);
   const parts = [
@@ -410,8 +413,8 @@ function DiplomacyTab({ world, civ }: { world: World; civ: Civ }) {
 }
 
 function HistoryTab({ world, civ }: { world: World; civ: Civ }) {
-  const version = useGame((s) => s.version);
-  const events = useMemo(() => civEvents(world, civ.id).slice(-150).reverse(), [world, civ, version]);
+  const slow = useThrottledVersion(800);
+  const events = useMemo(() => civEvents(world, civ.id).slice(-150).reverse(), [world, civ, slow]);
   return (
     <div className="space-y-1">
       {events.length === 0 && <Empty>No recorded events.</Empty>}

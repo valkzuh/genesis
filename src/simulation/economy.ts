@@ -341,7 +341,8 @@ export function updateEconomy(world: World): void {
       ironFactor *
       horseBonus *
       (0.55 + 0.45 * stab) *
-      (1 - Math.min(0.5, civ.warExhaustion * 0.004));
+      (1 - Math.min(0.5, civ.warExhaustion * 0.004)) *
+      (1 + effectMagnitude(civ, 'fervor'));
 
     // --- Population growth modifier ---------------------------------------------------
     let g = (0.5 + 0.5 * stab) * (0.8 + (0.4 * civ.happiness) / 100);

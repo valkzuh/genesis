@@ -118,7 +118,7 @@ export function Hint({ text, children, side = 'top', className }: { text: ReactN
           ? 'left-full top-1/2 -translate-y-1/2 ml-2'
           : 'right-full top-1/2 -translate-y-1/2 mr-2';
   return (
-    <span className={cx('relative inline-flex', className)} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}>
+    <span className={cx('relative', className && /(^|\s)(hidden|block|flex|inline-flex|inline-block)(\s|$)/.test(className) ? '' : 'inline-flex', className)} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}>
       {children}
       {open && (
         <span role="tooltip" className={cx('pointer-events-none absolute z-50 w-max max-w-64 rounded-md border border-white/10 bg-ink-900/95 px-2.5 py-1.5 text-[0.72rem] font-medium leading-snug text-ink-100 shadow-xl shadow-black/40 animate-fade-in', pos)}>

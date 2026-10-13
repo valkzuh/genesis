@@ -3,6 +3,7 @@ import { neighborTable } from '../world/grid';
 import { clamp } from '../utils/math';
 import { ordinalWord } from '../utils/names';
 import { GOVERNMENTS, SIM } from './constants';
+import { adminRange } from './economy';
 import { logEvent } from './events';
 import { destroyCiv, ensureCapital } from './lifecycle';
 import { setOwner } from './territory';
@@ -226,8 +227,9 @@ export function updateWars(world: World): void {
     const shareD = f.weight / Math.max(1e-6, frontWeight[f.d]!);
     const engagedA = A.army * shareA;
     const engagedD = D.army * shareD;
-    const powA = A.armyPower * shareA * (f.naval ? 0.6 : 1) * rng.range(0.75, 1.25);
-    const powD = D.armyPower * shareD * frontDefense(world, f.d, f.a) * rng.range(0.75, 1.25);
+    const front = frontInfo(world, f.d, f.a);
+    const powA = A.armyPower * shareA * (f.naval ? 0.6 : 1) * supplyFactor(world, A, front, f.naval) * rng.range(0.75, 1.25);
+    const powD = D.armyPower * shareD * front.defense * supplyFactor(world, D, front, false) * rng.range(0.75, 1.25);
     const ratio = powA / Math.max(1e-6, powA + powD);
     const intensity = 0.045 + 0.012 * Math.min(A.era, D.era);
     const lossA = Math.min(engagedA * 0.5, engagedA * intensity * (1 - ratio) * 2 * rng.range(0.7, 1.3));
@@ -283,11 +285,23 @@ export function updateWars(world: World): void {
 }
 
 /** Terrain and fortification multiplier for a defender on a front. */
-function frontDefense(world: World, defender: number, attacker: number): number {
+interface FrontInfo {
+  /** Terrain and fortification multiplier for the defender. */
+  defense: number;
+  /** Centroid of the front line (tile coordinates), or -1 if unknown. */
+  x: number;
+  y: number;
+}
+
+/** Terrain, fortification and location of the line where two nations meet. */
+function frontInfo(world: World, defender: number, attacker: number): FrontInfo {
   const { map } = world;
-  const nbt = neighborTable(map.width, map.height);
+  const W = map.width;
+  const nbt = neighborTable(W, map.height);
   let sum = 0;
   let n = 0;
+  let sx = 0;
+  let sy = 0;
   for (const t of world.cache.civTiles[defender] ?? []) {
     if (world.owner[t] !== defender) continue;
     let touches = false;
@@ -297,10 +311,28 @@ function frontDefense(world: World, defender: number, attacker: number): number 
     }
     if (!touches) continue;
     sum += map.defense[t]! * (map.river[t] ? 1.08 : 1) * (world.cityAt[t]! >= 0 ? 1.15 : 1);
+    sx += t % W;
+    sy += (t / W) | 0;
     n++;
     if (n > 60) break;
   }
-  return 1.08 * (n > 0 ? sum / n : 1.1);
+  if (n === 0) return { defense: 1.1 * 1.08, x: -1, y: -1 };
+  return { defense: 1.08 * (sum / n), x: sx / n, y: sy / n };
+}
+
+/**
+ * Supply: armies fighting far beyond their administrative reach are hungry,
+ * slow and thinly spread. 1 at home, falling toward 0.4 at great distances.
+ */
+function supplyFactor(world: World, civ: Civ, front: FrontInfo, naval: boolean): number {
+  if (front.x < 0) return 0.85;
+  const cap = world.cities[civ.capital];
+  if (!cap) return 0.6;
+  const W = world.map.width;
+  const d = Math.hypot((cap.tile % W) - front.x, ((cap.tile / W) | 0) - front.y);
+  const reach = adminRange(civ) * (naval ? 0.8 : 1.15);
+  const f = 1 / (1 + (Math.max(0, d - reach) / Math.max(1, reach)) * 0.9);
+  return Math.max(0.4, f);
 }
 
 /** Moves up to `n` frontline tiles from `loser` to `winner`. Returns tiles taken. */
@@ -338,9 +370,15 @@ function captureTiles(world: World, war: War, winner: Civ, loser: Civ, n: number
   let taken = 0;
   const pw = participant(war, winner.id);
   const pl = participant(war, loser.id);
+  const rng = world.rng;
+  let attempts = 0;
   for (const { t } of candidates) {
-    if (taken >= n) break;
+    if (taken >= n || attempts >= n * 2) break;
     if (world.owner[t] !== loser.id) continue;
+    // A people defending its own homeland resists foreign conquest.
+    const homeland = world.culture[t] === loser.cultureId && world.culture[t] !== winner.cultureId;
+    attempts++;
+    if (homeland && rng.chance(0.35)) continue;
     const cityId = world.cityAt[t]!;
     const wasCapital = cityId >= 0 && loser.capital === cityId;
     setOwner(world, t, winner.id);
@@ -360,12 +398,18 @@ function captureTiles(world: World, war: War, winner: Civ, loser: Civ, n: number
       if (wasCapital) {
         loser.stability = Math.max(0, loser.stability - 15);
         loser.legitimacy = Math.max(0, loser.legitimacy - 20);
-        const historic = (city.founder === loser.id && city.founded === loser.foundedYear) || world.pop[t]! > loser.population * 0.2;
-        logEvent(world, 'conquest', [winner.id, loser.id], `${city.name}, capital of the ${loser.name}, falls to the ${winner.name}.`, historic ? 4 : 3, t, war.id);
+        // Only the fall of a nation's historic seat (or of a still-great power's capital) is world news.
+        const historic = (city.founder === loser.id && city.founded === loser.foundedYear) || (loser.tiles > 25 && world.pop[t]! > loser.population * 0.15);
+        if (historic) {
+          logEvent(world, 'conquest', [winner.id, loser.id], `${city.name}, capital of the ${loser.name}, falls to the ${winner.name}.`, 4, t, war.id);
+        } else {
+          logEvent(world, 'conquest', [winner.id, loser.id], `The ${winner.name} captures ${city.name}, the last seat of the ${loser.name}.`, 3, t, war.id);
+        }
         const newCap = world.cities[loser.capital];
         if (newCap && newCap.owner === loser.id && !newCap.ruined) {
           logEvent(world, 'city', [loser.id], `The ${loser.name} moves its capital to ${newCap.name}.`, 2, newCap.tile);
-        } else {
+        } else if (loser.tiles > 0) {
+          // Without a city, raise an emergency seat; a nation with no land is handled when the war resolves.
           ensureCapital(world, loser);
         }
       } else {
@@ -440,8 +484,10 @@ function considerPeace(world: World, war: War): void {
   const def = world.civs[war.leadDefender]!;
   const exA = sideExhaustion(world, war, 'attacker');
   const exD = sideExhaustion(world, war, 'defender');
+  const rebellion = war.cause === 'independence' || war.cause === 'civil_war';
   const tolA = 55 + lead.traits.aggression * 25 + GOVERNMENTS[lead.government].aggression * 60;
-  const tolD = 72 + def.traits.tradition * 10;
+  // A realm fighting its own rebels tires sooner than one defending its homeland.
+  const tolD = rebellion ? 48 + def.traits.tradition * 10 : 72 + def.traits.tradition * 10;
   const hasFront = (world.cache.borders.get(pairKey(war.leadAttacker, war.leadDefender)) ?? 0) > 0;
   let chance = 0;
   if (exA > tolA) chance += 0.35;
@@ -467,9 +513,10 @@ export function endWar(world: World, war: War, forced?: WarOutcome, divine = fal
   const rebellion = war.cause === 'independence' || war.cause === 'civil_war';
   let outcome: WarOutcome;
   if (forced) outcome = forced;
-  else if (war.score >= 25) outcome = rebellion ? 'independence' : 'attacker_victory';
-  else if (war.score <= -25) outcome = rebellion ? 'rebels_crushed' : 'defender_victory';
-  else outcome = rebellion ? 'independence' : 'stalemate';
+  else if (rebellion) outcome = war.score <= -45 ? 'rebels_crushed' : 'independence';
+  else if (war.score >= 25) outcome = 'attacker_victory';
+  else if (war.score <= -25) outcome = 'defender_victory';
+  else outcome = 'stalemate';
 
   const duration = world.year - war.startYear;
   let summary = '';
@@ -504,8 +551,8 @@ export function endWar(world: World, war: War, forced?: WarOutcome, divine = fal
     }
     summary =
       outcome === 'attacker_victory'
-        ? `The ${war.name} ends in victory for the ${winner.name}${ceded > 0 ? `; the ${loser.name} cedes ${ceded} more provinces` : ''}.`
-        : `The ${war.name} ends: the ${winner.name} repels the ${loser.name}${ceded > 0 ? ` and annexes ${ceded} border provinces` : ''}.`;
+        ? `The ${war.name} ends in victory for the ${winner.name}${ceded > 0 ? `; the ${loser.name} cedes ${ceded} more ${ceded === 1 ? 'province' : 'provinces'}` : ''}.`
+        : `The ${war.name} ends: the ${winner.name} repels the ${loser.name}${ceded > 0 ? ` and annexes ${ceded} border ${ceded === 1 ? 'province' : 'provinces'}` : ''}.`;
   } else if (outcome === 'annexation') {
     summary = `The ${war.name} ends with the total conquest of the ${def.name}.`;
     importance = 4;

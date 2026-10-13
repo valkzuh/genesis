@@ -10,6 +10,7 @@ import { formatNumber } from '../../utils/format';
 import { mix, toHex } from '../../utils/color';
 import type { Civ, War, World } from '../../types/simulation';
 import { CivLink, CivSwatch, Empty, Hint, Section } from '../ui';
+import { useThrottledVersion } from '../hooks';
 
 function WarCard({ world, war }: { world: World; war: War }) {
   const s = summarizeWar(world, war);
@@ -128,7 +129,8 @@ export function DiplomacyPanel() {
   const version = useGame((s) => s.version);
   const wars = useMemo(() => [...world.cache.activeWars].sort((a, b) => a.startYear - b.startYear), [world, version]);
   const blocs = useMemo(() => allianceBlocs(world), [world, version]);
-  const living = useMemo(() => world.civs.filter((c) => c.alive).sort((a, b) => b.population - a.population).slice(0, 24), [world, version]);
+  const slow = useThrottledVersion(1200);
+  const living = useMemo(() => world.civs.filter((c) => c.alive).sort((a, b) => b.population - a.population).slice(0, 24), [world, slow]);
   const rivalries = useMemo(() => world.relations.filter((r) => r.rivalry), [world, version]);
   const recent = useMemo(() => world.wars.filter((w) => w.endYear !== null).slice(-6).reverse(), [world, version]);
 

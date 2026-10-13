@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatNumber } from '../utils/format';
 
@@ -33,7 +34,7 @@ function ChartTooltip({ active, payload, label, format }: { active?: boolean; pa
 const axisStyle = { fontSize: 10, fill: '#8f99ae' };
 
 /** Compact time-series chart used in the dashboard and inspector. */
-export function TrendChart({
+function TrendChartImpl({
   data,
   series,
   height = 120,
@@ -97,3 +98,14 @@ export function TrendChart({
     </div>
   );
 }
+
+/** Re-renders only when its data array or series actually change. */
+export const TrendChart = memo(
+  TrendChartImpl,
+  (a, b) =>
+    a.data === b.data &&
+    a.height === b.height &&
+    a.area === b.area &&
+    a.series.length === b.series.length &&
+    a.series.every((s, i) => s.key === b.series[i]!.key && s.color === b.series[i]!.color),
+);

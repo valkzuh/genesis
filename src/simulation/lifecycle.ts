@@ -212,7 +212,9 @@ export function spawnBreakaway(world: World, parent: Civ | null, tiles: number[]
   let regionPop = 0;
   for (const t of tiles) regionPop += world.pop[t]!;
   const parentPop = parent ? Math.max(1, parent.population) : 1;
-  const share = Math.min(1, regionPop / parentPop);
+  // Garrisons are spread across the land, so a region's share of the army
+  // reflects both its people and its extent.
+  const share = Math.min(1, Math.max(regionPop / parentPop, parent ? (tiles.length / Math.max(1, parent.tiles)) * 0.6 : 0));
 
   const civ = createCiv(world, {
     tiles,
@@ -232,9 +234,14 @@ export function spawnBreakaway(world: World, parent: Civ | null, tiles: number[]
 
   if (parent) {
     const armyShare = opts.armyShare ?? 0.5;
-    const defectors = parent.army * share * armyShare;
+    const defectors = Math.min(parent.army * 0.6, parent.army * share * armyShare);
     parent.army -= defectors;
-    civ.army = defectors + regionPop * 0.02;
+    civ.army = defectors + regionPop * (opts.kind === 'collapse' ? 0.02 : 0.035);
+    if (opts.kind === 'secession' || opts.kind === 'civil_war' || opts.kind === 'divine') {
+      // Revolutionary fervour: new states fight hard for their survival.
+      civ.effects.push({ kind: 'fervor', until: world.year + 15, magnitude: 0.5, divine: opts.kind === 'divine' });
+      civ.stability = 62;
+    }
     for (const key of ['food', 'wealth', 'iron', 'timber', 'stone'] as const) {
       const moved = parent[key] * share;
       parent[key] -= moved;

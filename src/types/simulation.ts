@@ -62,7 +62,7 @@ export interface CivOrigin {
   restoredFrom: number | null;
 }
 
-export type EffectKind = 'boom' | 'golden_age' | 'divine_favor' | 'turmoil' | 'scientific_revolution';
+export type EffectKind = 'boom' | 'golden_age' | 'divine_favor' | 'turmoil' | 'scientific_revolution' | 'fervor';
 
 export interface Effect {
   kind: EffectKind;

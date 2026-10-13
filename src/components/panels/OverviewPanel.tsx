@@ -7,6 +7,7 @@ import { ERAS } from '../../simulation/constants';
 import { formatNumber, formatPopulation } from '../../utils/format';
 import { toHex } from '../../utils/color';
 import { TrendChart } from '../charts';
+import { useThrottledVersion } from '../hooks';
 import { CivLink, EventIcon, Section, Stat, cx } from '../ui';
 
 function formatMetric(metric: RankMetric, v: number): string {
@@ -27,10 +28,11 @@ function formatMetric(metric: RankMetric, v: number): string {
 export function OverviewPanel() {
   const world = useGame((s) => s.world)!;
   const version = useGame((s) => s.version);
+  const slow = useThrottledVersion(1000);
   const [metric, setMetric] = useState<RankMetric>('population');
   const stats = useMemo(() => worldStats(world), [world, version]);
-  const ranking = useMemo(() => rankCivs(world, metric).slice(0, 10), [world, version, metric]);
-  const history = useMemo(() => world.history.map((h) => ({ y: h.y, pop: h.pop, civs: h.civs, wars: h.wars, era: h.avgEra })), [world, version]);
+  const ranking = useMemo(() => rankCivs(world, metric).slice(0, 10), [world, slow, metric]);
+  const history = useMemo(() => world.history.map((h) => ({ y: h.y, pop: h.pop, civs: h.civs, wars: h.wars, era: h.avgEra })), [world, slow]);
   const eraCounts = useMemo(() => {
     const counts = ERAS.map(() => 0);
     for (const c of world.civs) if (c.alive) counts[c.era]!++;
