@@ -187,16 +187,11 @@ function OverviewTab({ world, civ }: { world: World; civ: Civ }) {
       <Section title="Population">
         <TrendChart data={history} series={[{ key: 'pop', name: 'Population', color: toHex(civ.color) }]} area height={110} format={(v) => formatPopulation(v)} />
       </Section>
-      <Section title="Territory & Stability">
-        <TrendChart
-          data={history}
-          series={[
-            { key: 'tiles', name: 'Provinces', color: '#e2c06a' },
-            { key: 'stab', name: 'Stability', color: '#7fb6e0' },
-          ]}
-          height={100}
-          format={(v) => `${Math.round(v)}`}
-        />
+      <Section title="Territory">
+        <TrendChart data={history} series={[{ key: 'tiles', name: 'Provinces', color: '#e2c06a' }]} height={95} format={(v) => `${Math.round(v)}`} />
+      </Section>
+      <Section title="Stability">
+        <TrendChart data={history} series={[{ key: 'stab', name: 'Stability', color: '#7fb6e0' }]} height={85} format={(v) => `${Math.round(v)}`} yDomain={[0, 100]} />
       </Section>
 
       {civ.alive && (

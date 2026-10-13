@@ -4,6 +4,8 @@ import { isWaterBiome } from '../world/biomes';
 import { Biome } from '../types/world';
 import { createWorld } from '../simulation/genesis';
 import { checkInvariants } from '../simulation/invariants';
+import { LANGUAGES, NameRegistry, adjectiveFor, isRealWorldName } from '../utils/names';
+import { Rng } from '../utils/rng';
 
 describe('world generation', () => {
   it('is deterministic for the same seed', () => {
@@ -67,6 +69,19 @@ describe('world generation', () => {
         expect(civ.population).toBeGreaterThan(0);
       }
       expect(checkInvariants(world)).toEqual([]);
+    }
+  });
+
+  it('never names places or peoples after the real world', () => {
+    expect(isRealWorldName('Asia')).toBe(true);
+    const rng = new Rng('names');
+    const registry = new NameRegistry();
+    for (let i = 0; i < 3000; i++) {
+      const lang = LANGUAGES[i % LANGUAGES.length]!;
+      const place = registry.placeName(lang, rng);
+      expect(isRealWorldName(place)).toBe(false);
+      expect(isRealWorldName(adjectiveFor(place, lang))).toBe(false);
+      expect(isRealWorldName(registry.cityName(lang, rng))).toBe(false);
     }
   });
 });

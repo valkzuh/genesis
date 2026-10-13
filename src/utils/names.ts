@@ -139,6 +139,52 @@ const VOWEL_CHARS = new Set(['a', 'e', 'i', 'o', 'u', 'y']);
 const COMMON_WORDS = new Set(['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'any', 'can', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use', 'war', 'bad', 'die', 'dead', 'hell', 'kill', 'hate', 'then', 'than', 'them', 'they', 'this', 'that', 'with', 'from', 'were', 'when', 'what', 'here', 'there', 'some', 'more', 'many', 'much', 'only', 'very', 'also', 'into', 'over', 'such', 'your', 'yes']);
 const BANNED = ['fuck', 'shit', 'cunt', 'nig', 'fag', 'rape', 'piss', 'cock', 'dick', 'slut', 'whore', 'nazi', 'kkk', 'cum', 'tit', 'anal', 'anus', 'porn', 'sex'];
 
+/**
+ * Real places, peoples and faiths. A generated name that matches one exactly,
+ * or whose demonym does, is rejected, so a fantasy world never fields an
+ * "Asian Republic" or a "Kingdom of Peru".
+ */
+const REAL_WORLD = new Set(
+  `africa african america american asia asian europe european europa oceania arctic antarctica australia australian
+  eurasia eurasian siberia siberian arabia arabian arab arabic sahara caribbean balkan balkans baltic nordic
+  scandinavia anatolia anatolian caucasus indonesia indonesian filipino
+  china chinese japan japanese korea korean mongolia mongol mongolian tibet tibetan nepal nepali nepalese bhutan
+  india indian hindu hindi bengal bengali punjab punjabi burma burmese siam siamese thai laos lao vietnam vietnamese
+  cambodia khmer malaya malay malaysia java javanese bali balinese sumatra borneo timor taiwan taiwanese ceylon lanka
+  tamil pakistan pakistani afghan afghani persia persian iran iranian iraq iraqi syria syrian assyria assyrian
+  babylon babylonian sumer sumerian akkad akkadian elam lydia lydian media median phrygia phrygian parthia parthian
+  armenia armenian georgia georgian israel israeli judea judah jewish jew hebrew lebanon lebanese jordan canaan
+  phoenicia phoenician yemen yemeni oman omani qatar kuwait kuwaiti saudi mecca medina jerusalem bethlehem nazareth
+  islam islamic muslim egypt egyptian libya libyan tunisia algeria morocco moor moorish carthage berber nubia nubian
+  kush turk turkish turkey ottoman
+  mali malian chad niger nigeria nigerian ghana ghanaian togo benin gabon congo congolese zaire angola zambia malawi
+  kenya kenyan uganda rwanda burundi sudan sudanese somalia somali ethiopia eritrea guinea liberia senegal gambia
+  namibia botswana lesotho zulu bantu
+  france french gaul gallic spain spanish iberia portugal italy italian rome roman roma latin venice genoa milan
+  naples florence greece greek hellas hellenic sparta spartan athens athenian troy trojan crete cretan cyprus malta
+  maltese sicily germany german prussia prussian saxon saxony bavaria austria austrian hungary hungarian magyar
+  bohemia poland polish russia russian rus ukraine slav slavic serbia serbian croatia bosnia romania bulgaria albania
+  thrace thracian dacia dacian illyria macedonia celt celtic goth gothic viking norse dane danish sweden swedish
+  norway finland finnish iceland ireland irish scotland scottish wales welsh england english britain british albion
+  holland dutch belgium swiss
+  canada canadian mexico mexican cuba cuban haiti jamaica panama peru peruvian chile chilean bolivia brazil ecuador
+  colombia venezuela argentina texas texan alaska hawaii hawaiian ohio utah iowa idaho maine kansas nevada dakota
+  oregon montana virginia carolina florida inca incan maya mayan aztec olmec toltec zapotec mixtec
+  tonga samoa fiji nauru palau tuvalu tahiti guam papua maori
+  paris london berlin vienna prague warsaw moscow kiev kyiv madrid lisbon oslo dublin cairo lagos accra dakar tunis
+  rabat kabul tehran baghdad ankara istanbul sofia tokyo kyoto osaka seoul beijing shanghai delhi mumbai dhaka manila
+  hanoi jakarta sydney perth dubai doha riyadh lima quito havana cusco tikal boston dallas denver austin chicago
+  atlanta miami seattle houston toronto quebec
+  christ christian jesus moses allah buddha buddhist catholic sikh zion vatican`
+    .split(/\s+/)
+    .filter(Boolean),
+);
+
+/** True when a word matches a real place, people or faith. */
+export function isRealWorldName(name: string): boolean {
+  return REAL_WORLD.has(name.toLowerCase());
+}
+
 export function getLanguage(id: string): Language {
   return LANGUAGES.find((l) => l.id === id) ?? LANGUAGES[0]!;
 }
@@ -184,10 +230,19 @@ function acceptable(name: string): boolean {
   if (/[aeiou]{3,}/.test(lower)) return false;
   for (const bad of BANNED) if (lower.includes(bad)) return false;
   if (COMMON_WORDS.has(lower)) return false;
+  if (isRealWorldName(lower)) return false;
   return true;
 }
 
-function generate(lang: Language, rng: Rng, endings: readonly string[], minSyl: number, maxSyl: number, endingChance: number): string {
+function generate(
+  lang: Language,
+  rng: Rng,
+  endings: readonly string[],
+  minSyl: number,
+  maxSyl: number,
+  endingChance: number,
+  accept?: (name: string) => boolean,
+): string {
   for (let attempt = 0; attempt < 40; attempt++) {
     const count = rng.intRange(minSyl, maxSyl);
     let name = '';
@@ -195,7 +250,7 @@ function generate(lang: Language, rng: Rng, endings: readonly string[], minSyl: 
       name = join(name, syllable(lang, rng, i === count - 1 ? rng.chance(0.5) : rng.chance(0.25)));
     }
     if (rng.chance(endingChance)) name = join(name, rng.pick(endings));
-    if (acceptable(name)) return capitalize(name);
+    if (acceptable(name) && (!accept || accept(capitalize(name)))) return capitalize(name);
   }
   return capitalize(rng.pick(lang.onsets) + rng.pick(lang.vowels) + rng.pick(endings));
 }
@@ -238,7 +293,8 @@ export class NameRegistry {
   }
 
   placeName(lang: Language, rng: Rng): string {
-    return this.unique(() => generate(lang, rng, lang.placeEndings, 1, 2, 0.75));
+    // Nations take their adjective from the place name, so screen that too ("Asia" → "Asian").
+    return this.unique(() => generate(lang, rng, lang.placeEndings, 1, 2, 0.75, (name) => !isRealWorldName(adjectiveFor(name, lang))));
   }
 
   cityName(lang: Language, rng: Rng): string {

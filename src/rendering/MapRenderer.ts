@@ -42,7 +42,7 @@ interface CityView {
 function pixelsPerTile(width: number, height: number): number {
   return Math.max(6, Math.min(12, Math.floor(Math.sqrt(1_650_000 / (width * height)))));
 }
-const MAX_ZOOM = 6;
+const MAX_ZOOM = 4.5;
 const CITY_FONT = 'GenesisCity';
 
 function ease(t: number): number {
