@@ -2,7 +2,7 @@
   "name": "genesis",
   "private": true,
   "version": "1.0.0",
-  "description": "GENESIS \u2014 a living, procedurally generated civilization simulator for the browser.",
+  "description": "GENESIS — a living, procedurally generated civilization simulator for the browser.",
   "type": "module",
   "license": "MIT",
   "engines": {
